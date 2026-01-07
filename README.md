@@ -6,7 +6,7 @@ A simple, robust shell script for Cygwin on Windows 10 to recursively scan direc
 
 - **Recursive Scanning**: Traverses all subdirectories.
 - **SHA256 Hashing**: Uses secure SHA256 hashes to identify duplicates.
-- **CSV Report**: Generates a `duplicates_report.csv` containing the hash and file path of all duplicates found.
+- **CSV Report**: Generates a `duplicates_report.csv` containing the hash, file path, and size of all duplicates found.
 - **Robustness**: Handles filenames with spaces and special characters correctly.
 
 ## Prerequisites
@@ -20,6 +20,7 @@ A simple, robust shell script for Cygwin on Windows 10 to recursively scan direc
   - `uniq`
   - `awk`
   - `cut`
+  - `du`
 
 ## Installation
 
@@ -55,9 +56,9 @@ The script creates a file named `duplicates_report.csv` in the current working d
 
 **Format:**
 ```csv
-Hash,FilePath
-<sha256_hash>,"<path_to_file_1>"
-<sha256_hash>,"<path_to_file_2>"
+Hash,FilePath,Size
+<sha256_hash>,"<path_to_file_1>",<size>
+<sha256_hash>,"<path_to_file_2>",<size>
 ...
 ```
 

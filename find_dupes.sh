@@ -24,7 +24,7 @@ find "$SEARCH_DIR" -type f -print0 | xargs -0 sha256sum > "$TMP_HASHES"
 echo "Processing duplicates..."
 
 # Create/Overwrite output CSV with header
-echo "Hash,FilePath" > "$OUTPUT_FILE"
+echo "Hash,FilePath,Size" > "$OUTPUT_FILE"
 
 # Logic to find duplicates:
 # 1. Sort by hash (first column)
@@ -37,11 +37,14 @@ sort "$TMP_HASHES" | uniq -w 64 -D | while read -r line; do
     # We'll use cut to get the rest of the line
     file=$(echo "$line" | cut -c 67-)
     
+    # Calculate human-readable file size
+    size=$(du -h "$file" | awk '{print $1}')
+    
     # Escape double quotes in filename for CSV
     file="${file//\"/\"\"}"
     
     # Append to CSV
-    echo "$hash,\"$file\"" >> "$OUTPUT_FILE"
+    echo "$hash,\"$file\",$size" >> "$OUTPUT_FILE"
 done
 
 # Clean up

@@ -1,8 +1,46 @@
 #!/bin/bash
 
-# Default to current directory if no argument is provided
-SEARCH_DIR="${1:-.}"
+# Default values
+SEARCH_DIR="."
 OUTPUT_FILE="duplicates_report.csv"
+VERBOSE=false
+
+# Function to display help
+show_help() {
+    echo "Usage: $0 [OPTIONS] [DIRECTORY]"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help           Show this help message and exit"
+    echo "  -v, --verbose        Enable verbose output"
+    echo "  -o, --output FILE    Specify output file (default: duplicates_report.csv)"
+    echo ""
+    echo "Arguments:"
+    echo "  DIRECTORY            Directory to scan (default: current directory)"
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -v|--verbose)
+            VERBOSE=true
+            shift
+            ;;
+        -o|--output)
+            OUTPUT_FILE="$2"
+            shift
+            shift
+            ;;
+        *)
+            SEARCH_DIR="$1"
+            shift
+            ;;
+    esac
+done
 
 # Check if directory exists
 if [ ! -d "$SEARCH_DIR" ]; then
@@ -10,15 +48,45 @@ if [ ! -d "$SEARCH_DIR" ]; then
     exit 1
 fi
 
+# Check if output file exists
+if [ -f "$OUTPUT_FILE" ]; then
+    echo "Output file '$OUTPUT_FILE' already exists."
+    while true; do
+        read -p "Do you want to [O]verwrite, [R]ename, or [C]ancel? " choice
+        case $choice in
+            [Oo]* ) break;;
+            [Rr]* ) 
+                read -p "Enter new filename: " new_name
+                OUTPUT_FILE="$new_name"
+                if [ -f "$OUTPUT_FILE" ]; then
+                     echo "File '$OUTPUT_FILE' also exists."
+                     continue
+                fi
+                break;;
+            [Cc]* ) exit 0;;
+            * ) echo "Please answer O, R, or C.";;
+        esac
+    done
+fi
+
 echo "Scanning '$SEARCH_DIR' for duplicates..."
+if [ "$VERBOSE" = true ]; then
+    echo "Output file: $OUTPUT_FILE"
+    echo "Verbose mode enabled."
+fi
+
 echo "Calculating SHA256 hashes (this may take a while)..."
 
 # Create a temporary file for raw hashes
 TMP_HASHES=$(mktemp)
 
 # Find all files, calculate sha256sum, and save to temp file
-# We use -type f to find files only
-# We use -print0 and xargs -0 to handle filenames with spaces/newlines correctly
+if [ "$VERBOSE" = true ]; then
+    # In verbose mode, we can't easily show progress of find|xargs without slowing it down,
+    # but we can at least say we are starting.
+    echo "Running: find \"$SEARCH_DIR\" -type f -print0 | xargs -0 sha256sum"
+fi
+
 find "$SEARCH_DIR" -type f -print0 | xargs -0 sha256sum > "$TMP_HASHES"
 
 echo "Processing duplicates..."
@@ -27,16 +95,14 @@ echo "Processing duplicates..."
 echo "Hash,FilePath,Size" > "$OUTPUT_FILE"
 
 # Logic to find duplicates:
-# 1. Sort by hash (first column)
-# 2. Use uniq -w 64 -D to print all lines that have duplicate hashes (checking first 64 chars for sha256)
-# 3. Reformat to CSV
 sort "$TMP_HASHES" | uniq -w 64 -D | while read -r line; do
     hash=$(echo "$line" | awk '{print $1}')
-    # Extract filename (everything after the hash and the space/asterisk)
-    # sha256sum output is: hash  filename (two spaces) or hash *filename (binary mode)
-    # We'll use cut to get the rest of the line
     file=$(echo "$line" | cut -c 67-)
     
+    if [ "$VERBOSE" = true ]; then
+        echo "Found duplicate: $file"
+    fi
+
     # Calculate human-readable file size
     size=$(du -h "$file" | awk '{print $1}')
     

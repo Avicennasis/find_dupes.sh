@@ -32,11 +32,22 @@ A simple, robust shell script for Cygwin on Windows 10 to recursively scan direc
 
 ## Usage
 
-Run the script from your Cygwin terminal. You can provide a directory to scan as an argument. If no argument is provided, it scans the current directory.
-
+Run the script from your Cygwin terminal.
 ```bash
-./find_dupes.sh [directory_to_scan]
+./find_dupes.sh [OPTIONS] [DIRECTORY]
 ```
+
+### Options
+
+| Flag | Description |
+| :--- | :--- |
+| `-h`, `--help` | Show help message and exit. |
+| `-v`, `--verbose` | Enable verbose output (shows progress and details). |
+| `-o`, `--output FILE` | Specify output file (default: `duplicates_report.csv`). |
+
+### Arguments
+
+- `DIRECTORY`: The directory to scan. Defaults to the current directory if not specified.
 
 ### Examples
 
@@ -45,9 +56,14 @@ Scan the current directory:
 ./find_dupes.sh
 ```
 
-Scan a specific folder:
+Scan a specific folder with verbose output:
 ```bash
-./find_dupes.sh /cygdrive/c/Users/MyUser/Documents
+./find_dupes.sh -v /cygdrive/c/Users/MyUser/Documents
+```
+
+Save report to a custom file:
+```bash
+./find_dupes.sh -o my_report.csv
 ```
 
 ## Output
